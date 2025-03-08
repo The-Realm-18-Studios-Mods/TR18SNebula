@@ -225,8 +225,8 @@ const generateServerCommand: CommandModule = {
 
         if(argv.neoforge != null) {
             if (VersionUtil.isPromotionVersion(argv.neoforge as string)) {
-                logger.debug(`Resolving ${argv.neoforge as string} Fabric Version..`)
-                const version = await VersionUtil.getPromotedNeoForgeVersion(argv.NeoForge as string)
+                logger.debug(`Resolving ${argv.neoforge as string} NeoForge Version..`)
+                const version = await VersionUtil.getPromotedNeoForgeVersion(minecraftVersion, argv.NeoForge as string)
                 logger.debug(`NeoForge version set to ${version}`)
                 argv.neoforge = version
             }

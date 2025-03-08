@@ -47,7 +47,7 @@ export class NeoForgeGradle2Adapter extends NeoForgeResolver {
 
     public async getNeoForgeByVersion(): Promise<Module> {
         const libRepo = this.repoStructure.getLibRepoStruct()
-        const targetLocalPath = libRepo.getLocalForge(this.artifactVersion, 'universal')
+        const targetLocalPath = libRepo.getLocalNeoForge(this.artifactVersion, 'universal')
         NeoForgeGradle2Adapter.logger.debug(`Checking for neoforge version at ${targetLocalPath}..`)
         if (!await libRepo.artifactExists(targetLocalPath)) {
             NeoForgeGradle2Adapter.logger.debug('NeoForge not found locally, initializing download..')

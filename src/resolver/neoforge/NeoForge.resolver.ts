@@ -11,6 +11,7 @@ export abstract class NeoForgeResolver extends BaseResolver {
     protected readonly REMOTE_REPOSITORY = 'https://maven.neoforge.net/'
 
     protected repoStructure: RepoStructure
+    // @ts-ignore
     protected artifactVersion: string
 
     constructor(

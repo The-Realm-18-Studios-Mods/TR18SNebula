@@ -123,7 +123,7 @@ export class ForgeModStructure17 extends BaseForgeModStructure<McModInfo> {
         // Validate
         const crudeInference = this.attemptCrudeInference(name)
         if(this.modMetadata[name] != null) {
-            
+
             const x = this.modMetadata[name]
             if(x.modid == null || x.modid === '' || x.modid === this.EXAMPLE_MOD_ID) {
                 x.modid = this.discernResult(claritasId, crudeInference.name.toLowerCase())
@@ -138,8 +138,8 @@ export class ForgeModStructure17 extends BaseForgeModStructure<McModInfo> {
             } else {
                 x.version = this.discernResult(claritasVersion, crudeInference.version)
             }
-            
-            
+
+
         } else {
             this.modMetadata[name] = ({
                 modid: this.discernResult(claritasId, crudeInference.name.toLowerCase()),

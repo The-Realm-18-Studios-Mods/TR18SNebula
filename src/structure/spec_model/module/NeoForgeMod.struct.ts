@@ -1,7 +1,7 @@
 import { Type } from 'helios-distribution-types'
 import { VersionSegmented } from '../../../util/VersionSegmented.js'
 import { MinecraftVersion } from '../../../util/MinecraftVersion.js'
-import { BaseModStructure } from './Mod.struct.js'
+import { BaseModStructure } from './NeoMod.struct.js'
 import { LibraryType } from '../../../model/claritas/ClaritasLibraryType.js'
 import { ClaritasException } from './Module.struct.js'
 import { UntrackedFilesOption } from '../../../model/nebula/ServerMeta.js'

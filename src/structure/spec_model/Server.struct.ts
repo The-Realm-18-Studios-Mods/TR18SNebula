@@ -56,6 +56,7 @@ export class ServerStructure extends BaseModelStructure<Server> {
             version?: string
             forgeVersion?: string
             fabricVersion?: string
+            neoforgeVersion?: string
         }
     ): Promise<CreateServerResult | null> {
         const effectiveId = ServerStructure.getEffectiveId(id, minecraftVersion)
