@@ -58,7 +58,7 @@ export class VersionUtil {
                 return false
             }
         }
-        
+
         return true
     }
 
@@ -79,6 +79,38 @@ export class VersionUtil {
     public static async getPromotedForgeVersion(minecraftVersion: MinecraftVersion, promotion: string): Promise<string> {
         const workingPromotion = promotion.toLowerCase()
         const res = await VersionUtil.getPromotionIndex()
+        let version = res.promos[`${minecraftVersion}-${workingPromotion}`]
+        if (version == null) {
+            VersionUtil.logger.warn(`No ${workingPromotion} version found for Forge ${minecraftVersion}.`)
+            VersionUtil.logger.warn('Attempting to pull latest version instead.')
+            version = res.promos[`${minecraftVersion}-latest`]
+            if (version == null) {
+                throw new Error(`No latest version found for Forge ${minecraftVersion}.`)
+            }
+        }
+        return version
+    }
+
+    // -------------------------------
+    // NeoForge
+
+    public static async getPromotionNeoForgeIndex(): Promise<PromotionsSlim> {
+        const response = await got.get<PromotionsSlim>({
+            method: 'get',
+            url: 'https://maven.neoforge.net/net/neoforge/neo/promotions_slim.json',
+            responseType: 'json'
+        })
+        return response.body
+    }
+
+    public static getPromotedNeoForgeVersionStrict(index: PromotionsSlim, minecraftVersion: MinecraftVersion, promotion: string): string {
+        const workingPromotion = promotion.toLowerCase()
+        return index.promos[`${minecraftVersion}-${workingPromotion}`]
+    }
+
+    public static async getPromotedNeoForgeVersion(minecraftVersion: MinecraftVersion, promotion: string): Promise<string> {
+        const workingPromotion = promotion.toLowerCase()
+        const res = await VersionUtil.getPromotionNeoForgeIndex()
         let version = res.promos[`${minecraftVersion}-${workingPromotion}`]
         if (version == null) {
             VersionUtil.logger.warn(`No ${workingPromotion} version found for Forge ${minecraftVersion}.`)

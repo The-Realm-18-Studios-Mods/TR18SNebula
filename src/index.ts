@@ -180,7 +180,11 @@ const generateServerCommand: CommandModule = {
                 describe: 'Fabric version.',
                 type: 'string'
             })
-            .conflicts('forge', 'fabric')
+            .option('neoforge', {
+                describe: 'NeoForge version.',
+                type: 'string'
+            })
+            .conflicts('forge', 'fabric', 'neoforge')
     },
     handler: async (argv) => {
         argv.root = getRoot()
@@ -188,7 +192,8 @@ const generateServerCommand: CommandModule = {
         logger.debug(`Root set to ${argv.root}`)
         logger.debug(`Generating server ${argv.id} for Minecraft ${argv.version}.`,
             `\n\t└ Forge version: ${argv.forge}`,
-            `\n\t└ Fabric version: ${argv.fabric}`
+            `\n\t└ Fabric version: ${argv.fabric}`,
+            `\n\t└ NeoForge version: ${argv.neoforge}`
         )
 
         const minecraftVersion = new MinecraftVersion(argv.version as string)
@@ -222,13 +227,23 @@ const generateServerCommand: CommandModule = {
             }
         }
 
+        if(argv.neoforge != null) {
+            if (VersionUtil.isPromotionVersion(argv.neoforge as string)) {
+                logger.debug(`Resolving ${argv.neoforge as string} Fabric Version..`)
+                const version = await VersionUtil.getPromotedNeoForgeVersion(argv.NeoForge as string)
+                logger.debug(`NeoForge version set to ${version}`)
+                argv.neoforge = version
+            }
+        }
+
         const serverStruct = new ServerStructure(argv.root as string, getBaseURL(), false, false)
         await serverStruct.createServer(
             argv.id as string,
             minecraftVersion,
             {
                 forgeVersion: argv.forge as string,
-                fabricVersion: argv.fabric as string
+                fabricVersion: argv.fabric as string,
+                neoforgeVersion: argv.neoforge as string
             }
         )
     }
@@ -329,7 +344,7 @@ const generateDistroCommand: CommandModule = {
                 await writeFile(finalDestination, distroOut)
                 logger.info('Success!')
             }
-            
+
         } catch (error) {
             logger.error(`Failed to generate distribution with root ${argv.root}.`, error)
         }
@@ -348,7 +363,7 @@ const generateSchemasCommand: CommandModule = {
         try {
             await generateSchemas(argv.root as string)
             logger.info('Successfully generated schemas')
-            
+
         } catch (error) {
             logger.error(`Failed to generate schemas with root ${argv.root}.`, error)
         }

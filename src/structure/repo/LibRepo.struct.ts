@@ -7,6 +7,8 @@ export class LibRepoStructure extends BaseMavenRepo {
 
     public static readonly FORGE_GROUP = 'net.minecraftforge'
     public static readonly FORGE_ARTIFACT = 'forge'
+    public static readonly NEOFORGE_GROUP = 'net.neoforge'
+    public static readonly NEOFORGE_ARTIFACT = 'neoforge'
     public static readonly FMLCORE_ARTIFACT = 'fmlcore'
     public static readonly JAVAFMLLANGUAGE_ARTIFACT = 'javafmllanguage'
     public static readonly MCLANGUAGE_ARTIFACT = 'mclanguage'
@@ -21,6 +23,13 @@ export class LibRepoStructure extends BaseMavenRepo {
 
     public getLoggerName(): string {
         return 'LibRepoStructure'
+    }
+
+    public getLocalNeoForge(version: string, classifier?: string): string {
+        return this.getArtifactByComponents(
+            LibRepoStructure.NEOFORGE_GROUP,
+            LibRepoStructure.NEOFORGE_ARTIFACT,
+            version, classifier, 'jar')
     }
 
     public getLocalForge(version: string, classifier?: string): string {
