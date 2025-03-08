@@ -1,22 +1,20 @@
-import { ForgeModStructure113 } from '../structure/spec_model/module/forgemod/ForgeMod113.struct.js'
-import { ForgeModStructure17 } from '../structure/spec_model/module/forgemod/ForgeMod17.struct.js'
-import { ForgeGradle3Adapter } from '../resolver/forge/adapter/ForgeGradle3.resolver.js'
-import { ForgeGradle2Adapter } from '../resolver/forge/adapter/ForgeGradle2.resolver.js'
-import { ForgeResolver } from '../resolver/forge/Forge.resolver.js'
-import { BaseForgeModStructure } from '../structure/spec_model/module/ForgeMod.struct.js'
+import { NeoForgeModStructure113 } from '../structure/spec_model/module/neoforgemod/NeoForgeMod113.struct.js'
+import { NeoForgeGradle3Adapter } from '../resolver/neoforge/adapter/NeoForgeGradle3.resolver.js'
+import { NeoForgeGradle2Adapter } from '../resolver/neoforge/adapter/NeoForgeGradle2.resolver.js'
+import { NeoForgeResolver } from '../resolver/neoforge/NeoForge.resolver.js'
+import { BaseNeoForgeModStructure } from '../structure/spec_model/module/NeoForgeMod.struct.js'
 import { MinecraftVersion } from './MinecraftVersion.js'
 import { UntrackedFilesOption } from '../model/nebula/ServerMeta.js'
 
 export class VersionSegmentedRegistry {
 
     public static readonly FORGE_ADAPTER_IMPL = [
-        ForgeGradle2Adapter,
-        ForgeGradle3Adapter
+        NeoForgeGradle2Adapter,
+        NeoForgeGradle3Adapter
     ]
 
     public static readonly FORGEMOD_STRUCT_IMPL = [
-        ForgeModStructure17,
-        ForgeModStructure113
+        NeoForgeModStructure113
     ]
 
     public static getForgeResolver(
@@ -27,7 +25,7 @@ export class VersionSegmentedRegistry {
         baseURL: string,
         discardOutput: boolean,
         invalidateCache: boolean
-    ): ForgeResolver {
+    ): NeoForgeResolver {
         for (const impl of VersionSegmentedRegistry.FORGE_ADAPTER_IMPL) {
             if (impl.isForVersion(minecraftVersion, forgeVersion)) {
                 return new impl(absoluteRoot, relativeRoot, baseURL, minecraftVersion, forgeVersion, discardOutput, invalidateCache)
@@ -43,7 +41,7 @@ export class VersionSegmentedRegistry {
         relativeRoot: string,
         baseUrl: string,
         untrackedFiles: UntrackedFilesOption[]
-    ): BaseForgeModStructure<unknown> {
+    ): BaseNeoForgeModStructure<unknown> {
         for (const impl of VersionSegmentedRegistry.FORGEMOD_STRUCT_IMPL) {
             if (impl.isForVersion(minecraftVersion, forgeVersion)) {
                 return new impl(absoluteRoot, relativeRoot, baseUrl, minecraftVersion, untrackedFiles)

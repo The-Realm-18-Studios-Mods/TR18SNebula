@@ -6,7 +6,7 @@ import { LibraryType } from '../../../model/claritas/ClaritasLibraryType.js'
 import { ClaritasException } from './Module.struct.js'
 import { UntrackedFilesOption } from '../../../model/nebula/ServerMeta.js'
 
-export abstract class BaseForgeModStructure<T> extends BaseModStructure<T> implements VersionSegmented {
+export abstract class BaseNeoForgeModStructure<T> extends BaseModStructure<T> implements VersionSegmented {
 
     protected readonly EXAMPLE_MOD_ID = 'examplemod'
 

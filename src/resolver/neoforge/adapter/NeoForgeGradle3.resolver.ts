@@ -9,7 +9,7 @@ import { lstat, readFile, writeFile } from 'fs/promises'
 import { join, basename, dirname } from 'path'
 import { spawn } from 'child_process'
 import { JavaUtil } from '../../../util/java/JavaUtil.js'
-import { VersionManifestFG3 } from '../../../model/forge/VersionManifestFG3.js'
+import { VersionManifestFG3 } from '../../../model/neoforge/VersionManifestFG3.js'
 import { MavenUtil } from '../../../util/MavenUtil.js'
 import { createHash } from 'crypto'
 
@@ -88,7 +88,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 {
                     name: 'fmlcore',
                     group: LibRepoStructure.NEOFORGE_GROUP,
-                    artifact: LibRepoStructure.NEOFMLCORE_ARTIFACT,
+                    artifact: LibRepoStructure.NEOFORGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: [undefined]
                 },

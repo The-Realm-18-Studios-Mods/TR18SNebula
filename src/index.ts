@@ -172,10 +172,6 @@ const generateServerCommand: CommandModule = {
                 describe: 'Minecraft version.',
                 type: 'string'
             })
-            .option('forge', {
-                describe: 'Forge version.',
-                type: 'string'
-            })
             .option('fabric', {
                 describe: 'Fabric version.',
                 type: 'string'
@@ -184,7 +180,7 @@ const generateServerCommand: CommandModule = {
                 describe: 'NeoForge version.',
                 type: 'string'
             })
-            .conflicts('forge', 'fabric', 'neoforge')
+            .conflicts('fabric', 'neoforge')
     },
     handler: async (argv) => {
         argv.root = getRoot()
