@@ -273,9 +273,9 @@ const generateServerCurseForgeCommand: CommandModule = {
 
         // Extract forge version
         // TODO Support fabric
-        const forgeModLoader = modpackManifest.minecraft.modLoaders.find(({ id }) => id.toLowerCase().startsWith('forge-'))
-        const forgeVersion = forgeModLoader != null ? forgeModLoader.id.substring('forge-'.length) : undefined
-        logger.debug(`Forge version set to ${forgeVersion}`)
+        const forgeModLoader = modpackManifest.minecraft.modLoaders.find(({ id }) => id.toLowerCase().startsWith('neoforge-'))
+        const forgeVersion = forgeModLoader != null ? forgeModLoader.id.substring('neoforge-'.length) : undefined
+        logger.debug(`NeoForge version set to ${forgeVersion}`)
 
         const serverStruct = new ServerStructure(argv.root as string, getBaseURL(), false, false)
         const createServerResult = await serverStruct.createServer(
@@ -430,6 +430,43 @@ const recommendedForgeCommand: CommandModule = {
     }
 }
 
+const latestNeoForgeCommand: CommandModule = {
+    command: 'latest-neoforge <version>',
+    describe: 'Get the latest version of neoforge.',
+    handler: async (argv) => {
+        logger.debug(`Invoked latest-neoforge with version ${argv.version}.`)
+
+        const minecraftVersion = new MinecraftVersion(argv.version as string)
+        const neoforgeVer = await VersionUtil.getPromotedForgeVersion(minecraftVersion, 'latest')
+        logger.info(`Latest version: NeoForge ${neoforgeVer} (${argv.version})`)
+    }
+}
+
+const recommendedNeoForgeCommand: CommandModule = {
+    command: 'recommended-neoforge <version>',
+    describe: 'Get the recommended version of neoforge. Returns latest if there is no recommended build.',
+    handler: async (argv) => {
+        logger.debug(`Invoked recommended-neoforge with version ${argv.version}.`)
+
+        const index = await VersionUtil.getPromotionIndex()
+        const minecraftVersion = new MinecraftVersion(argv.version as string)
+
+        let neoforgeVer = VersionUtil.getPromotedVersionStrict(index, minecraftVersion, 'recommended')
+        if (neoforgeVer != null) {
+            logger.info(`Recommended version: NeoForge ${neoforgeVer} (${minecraftVersion})`)
+        } else {
+            logger.info(`No recommended build for ${minecraftVersion}. Checking for latest version..`)
+            neoforgeVer = VersionUtil.getPromotedVersionStrict(index, minecraftVersion, 'latest')
+            if (neoforgeVer != null) {
+                logger.info(`Latest version: Forge ${neoforgeVer} (${minecraftVersion})`)
+            } else {
+                logger.info(`No build available for ${minecraftVersion}.`)
+            }
+        }
+
+    }
+}
+
 const testCommand: CommandModule = {
     command: 'test <mcVer> <forgeVer>',
     describe: 'Validate a distribution.json against the spec.',
@@ -458,6 +495,8 @@ await yargs(hideBin(process.argv))
     .command(validateCommand)
     .command(latestForgeCommand)
     .command(recommendedForgeCommand)
+    .command(latestNeoForgeCommand)
+    .command(recommendedNeoForgeCommand)
     .command(testCommand)
     .demandCommand()
     .help()
