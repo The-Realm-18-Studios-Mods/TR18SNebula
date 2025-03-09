@@ -8,7 +8,7 @@ import { LoggerUtil } from '../../util/LoggerUtil.js'
 export abstract class NeoForgeResolver extends BaseResolver {
 
     protected readonly MOJANG_REMOTE_REPOSITORY = 'https://libraries.minecraft.net/'
-    protected readonly REMOTE_REPOSITORY = 'https://maven.neoforge.net/'
+    protected readonly REMOTE_REPOSITORY = 'https://maven.neoforged.net/releases/net/neoforged/'
 
     protected repoStructure: RepoStructure
     // @ts-ignore
