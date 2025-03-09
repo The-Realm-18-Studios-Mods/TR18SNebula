@@ -1,4 +1,4 @@
-import { NeoForgeResolver } from '../Forge.resolver.js'
+import { ForgeResolver } from '../Forge.resolver.js'
 import { MinecraftVersion } from '../../../util/MinecraftVersion.js'
 import { LoggerUtil } from '../../../util/LoggerUtil.js'
 import { VersionUtil } from '../../../util/VersionUtil.js'
@@ -9,7 +9,7 @@ import { lstat, readFile, writeFile } from 'fs/promises'
 import { join, basename, dirname } from 'path'
 import { spawn } from 'child_process'
 import { JavaUtil } from '../../../util/java/JavaUtil.js'
-import { VersionManifestFG3 } from '../../../model/neoforge/VersionManifestFG3.js'
+import { VersionManifestFG3 } from '../../../model/forge/VersionManifestFG3.js'
 import { MavenUtil } from '../../../util/MavenUtil.js'
 import { createHash } from 'crypto'
 
@@ -23,7 +23,7 @@ interface GeneratedFile {
     classpath?: boolean
 }
 
-export class NeoForgeGradle3Adapter extends NeoForgeResolver {
+export class ForgeGradle3Adapter extends ForgeResolver {
 
     private static readonly logger = LoggerUtil.getLogger('FG3 Adapter')
 
@@ -48,67 +48,67 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
         relativeRoot: string,
         baseUrl: string,
         minecraftVersion: MinecraftVersion,
-        neoforgeVersion: string,
+        forgeVersion: string,
         discardOutput: boolean,
         invalidateCache: boolean
     ) {
-        super(absoluteRoot, relativeRoot, baseUrl, minecraftVersion, neoforgeVersion, discardOutput, invalidateCache)
+        super(absoluteRoot, relativeRoot, baseUrl, minecraftVersion, forgeVersion, discardOutput, invalidateCache)
         this.configure()
     }
 
     private configure(): void {
 
-        if(NeoForgeGradle3Adapter.isExecutableJar(this.minecraftVersion)) {
-
+        if(ForgeGradle3Adapter.isExecutableJar(this.minecraftVersion)) {
+            
             // Separate block for 1.20.4+
 
             this.generatedFiles = [
                 {
                     name: 'universal jar',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
-                    artifact: LibRepoStructure.NEOFORGE_ARTIFACT,
+                    group: LibRepoStructure.FORGE_GROUP,
+                    artifact: LibRepoStructure.FORGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: ['universal'],
                 },
                 {
                     name: 'client jar',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
-                    artifact: LibRepoStructure.NEOFORGE_ARTIFACT,
+                    group: LibRepoStructure.FORGE_GROUP,
+                    artifact: LibRepoStructure.FORGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: ['client']
                 },
                 {
                     name: 'client shim',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
-                    artifact: LibRepoStructure.NEOFORGE_ARTIFACT,
+                    group: LibRepoStructure.FORGE_GROUP,
+                    artifact: LibRepoStructure.FORGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: ['shim'],
                     classpath: false
                 },
                 {
                     name: 'fmlcore',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
-                    artifact: LibRepoStructure.NEOFORGE_ARTIFACT,
+                    group: LibRepoStructure.FORGE_GROUP,
+                    artifact: LibRepoStructure.FMLCORE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: [undefined]
                 },
                 {
                     name: 'javafmllanguage',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
+                    group: LibRepoStructure.FORGE_GROUP,
                     artifact: LibRepoStructure.JAVAFMLLANGUAGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: [undefined]
                 },
                 {
                     name: 'mclanguage',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
+                    group: LibRepoStructure.FORGE_GROUP,
                     artifact: LibRepoStructure.MCLANGUAGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: [undefined]
                 },
                 {
                     name: 'lowcodelanguage',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
+                    group: LibRepoStructure.FORGE_GROUP,
                     artifact: LibRepoStructure.LOWCODELANGUAGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: [undefined]
@@ -118,23 +118,25 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
             return
         }
 
-        if(VersionUtil.isVersionAcceptable(this.minecraftVersion, [19, 20])) {
+        // Configure for 13, 14, 15, 16, 17, 18, 19
+        if(VersionUtil.isVersionAcceptable(this.minecraftVersion, [13, 14, 15, 16, 17, 18, 19, 20])) {
 
-            const mcpUnifiedVersion = `${this.minecraftVersion}-${NeoForgeGradle3Adapter.WILDCARD_MCP_VERSION}`
+            // https://github.com/MinecraftForge/MinecraftForge/commit/97d4652f5fe15931b980117efabdff332f9f6428
+            const mcpUnifiedVersion = `${this.minecraftVersion}-${ForgeGradle3Adapter.WILDCARD_MCP_VERSION}`
 
             this.generatedFiles = [
                 {
                     name: 'universal jar',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
-                    artifact: LibRepoStructure.NEOFORGE_ARTIFACT,
+                    group: LibRepoStructure.FORGE_GROUP,
+                    artifact: LibRepoStructure.FORGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: ['universal'],
                     classpath: false
                 },
                 {
                     name: 'client jar',
-                    group: LibRepoStructure.NEOFORGE_GROUP,
-                    artifact: LibRepoStructure.NEOFORGE_ARTIFACT,
+                    group: LibRepoStructure.FORGE_GROUP,
+                    artifact: LibRepoStructure.FORGE_ARTIFACT,
                     version: this.artifactVersion,
                     classifiers: ['client'],
                     classpath: false
@@ -158,8 +160,23 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 }
             ]
             this.wildcardsInUse = [
-                NeoForgeGradle3Adapter.WILDCARD_MCP_VERSION
+                ForgeGradle3Adapter.WILDCARD_MCP_VERSION
             ]
+
+            if(VersionUtil.isVersionAcceptable(this.minecraftVersion, [13, 14, 15, 16])) {
+
+                // Base jar present for 1.13-1.16
+
+                this.generatedFiles.unshift(
+                    {
+                        name: 'base jar',
+                        group: LibRepoStructure.FORGE_GROUP,
+                        artifact: LibRepoStructure.FORGE_ARTIFACT,
+                        version: this.artifactVersion,
+                        classifiers: [undefined]
+                    }
+                )
+            }
 
             if(VersionUtil.isVersionAcceptable(this.minecraftVersion, [17, 18, 19, 20])) {
 
@@ -168,21 +185,21 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 this.generatedFiles.unshift(
                     {
                         name: 'fmlcore',
-                        group: LibRepoStructure.NEOFORGE_GROUP,
+                        group: LibRepoStructure.FORGE_GROUP,
                         artifact: LibRepoStructure.FMLCORE_ARTIFACT,
                         version: this.artifactVersion,
                         classifiers: [undefined]
                     },
                     {
                         name: 'javafmllanguage',
-                        group: LibRepoStructure.NEOFORGE_GROUP,
+                        group: LibRepoStructure.FORGE_GROUP,
                         artifact: LibRepoStructure.JAVAFMLLANGUAGE_ARTIFACT,
                         version: this.artifactVersion,
                         classifiers: [undefined]
                     },
                     {
                         name: 'mclanguage',
-                        group: LibRepoStructure.NEOFORGE_GROUP,
+                        group: LibRepoStructure.FORGE_GROUP,
                         artifact: LibRepoStructure.MCLANGUAGE_ARTIFACT,
                         version: this.artifactVersion,
                         classifiers: [undefined]
@@ -197,10 +214,38 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 this.generatedFiles.unshift(
                     {
                         name: 'lowcodelanguage',
-                        group: LibRepoStructure.NEOFORGE_GROUP,
+                        group: LibRepoStructure.FORGE_GROUP,
                         artifact: LibRepoStructure.LOWCODELANGUAGE_ARTIFACT,
                         version: this.artifactVersion,
                         classifiers: [undefined]
+                    }
+                )
+            }
+
+            if(VersionUtil.isVersionAcceptable(this.minecraftVersion, [13, 14, 15])) {
+
+                // 13, 14, 15 use just the MC version.
+
+                this.generatedFiles.push(
+                    {
+                        name: 'client slim',
+                        group: LibRepoStructure.MINECRAFT_GROUP,
+                        artifact: LibRepoStructure.MINECRAFT_CLIENT_ARTIFACT,
+                        version: this.minecraftVersion.toString(),
+                        classifiers: [
+                            'slim',
+                            'slim-stable'
+                        ]
+                    },
+                    {
+                        name: 'client extra',
+                        group: LibRepoStructure.MINECRAFT_GROUP,
+                        artifact: LibRepoStructure.MINECRAFT_CLIENT_ARTIFACT,
+                        version: this.minecraftVersion.toString(),
+                        classifiers: [
+                            'extra',
+                            'extra-stable'
+                        ]
                     }
                 )
             } else {
@@ -237,6 +282,12 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
             return
         }
+
+        // Configure for 12
+        if(VersionUtil.isVersionAcceptable(this.minecraftVersion, [12])) {
+            // NOTHING TO CONFIGURE
+            return
+        }
     }
 
     public async getModule(): Promise<Module> {
@@ -244,27 +295,27 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
     }
 
     public isForVersion(version: MinecraftVersion, libraryVersion: string): boolean {
-        return NeoForgeGradle3Adapter.isForVersion(version, libraryVersion)
+        return ForgeGradle3Adapter.isForVersion(version, libraryVersion)
     }
 
     private async process(): Promise<Module> {
         const libRepo = this.repoStructure.getLibRepoStruct()
 
         // Get Installer
-        const installerPath = libRepo.getLocalNeoForge(this.artifactVersion, 'installer')
-        NeoForgeGradle3Adapter.logger.debug(`Checking for neoforge installer at ${installerPath}..`)
+        const installerPath = libRepo.getLocalForge(this.artifactVersion, 'installer')
+        ForgeGradle3Adapter.logger.debug(`Checking for forge installer at ${installerPath}..`)
         if (!await libRepo.artifactExists(installerPath)) {
-            NeoForgeGradle3Adapter.logger.debug('NeoForge installer not found locally, initializing download..')
+            ForgeGradle3Adapter.logger.debug('Forge installer not found locally, initializing download..')
             await libRepo.downloadArtifactByComponents(
                 this.REMOTE_REPOSITORY,
-                LibRepoStructure.NEOFORGE_GROUP,
-                LibRepoStructure.NEOFORGE_ARTIFACT,
+                LibRepoStructure.FORGE_GROUP,
+                LibRepoStructure.FORGE_ARTIFACT,
                 this.artifactVersion, 'installer', 'jar'
             )
         } else {
-            NeoForgeGradle3Adapter.logger.debug('Using locally discovered neoforge installer.')
+            ForgeGradle3Adapter.logger.debug('Using locally discovered forge installer.')
         }
-        NeoForgeGradle3Adapter.logger.debug(`Beginning processing of NeoForge v${this.neoforgeVersion} (Minecraft ${this.minecraftVersion})`)
+        ForgeGradle3Adapter.logger.debug(`Beginning processing of Forge v${this.forgeVersion} (Minecraft ${this.minecraftVersion})`)
 
         if(this.generatedFiles != null && this.generatedFiles.length > 0) {
             // Run installer
@@ -280,15 +331,15 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
         let doInstall = true
         // Check cache.
-        const cacheDir = this.repoStructure.getNeoForgeCacheDirectory(this.artifactVersion)
+        const cacheDir = this.repoStructure.getForgeCacheDirectory(this.artifactVersion)
         if (await pathExists(cacheDir)) {
             if(this.invalidateCache) {
-                NeoForgeGradle3Adapter.logger.info(`Removing existing cache ${cacheDir}..`)
+                ForgeGradle3Adapter.logger.info(`Removing existing cache ${cacheDir}..`)
                 await remove(cacheDir)
             } else {
                 // Use cache.
                 doInstall = false
-                NeoForgeGradle3Adapter.logger.info(`Using cached results at ${cacheDir}.`)
+                ForgeGradle3Adapter.logger.info(`Using cached results at ${cacheDir}.`)
             }
         } else {
             await mkdirs(cacheDir)
@@ -299,52 +350,52 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
             const workingInstaller = join(installerOutputDir, basename(installerPath))
 
             await copy(installerPath, workingInstaller)
-
+    
             // Required for the installer to function.
             await writeFile(join(installerOutputDir, 'launcher_profiles.json'), JSON.stringify({}))
-
-            NeoForgeGradle3Adapter.logger.debug('Spawning neoforge installer')
-
-            NeoForgeGradle3Adapter.logger.info('============== [ IMPORTANT ] ==============')
-            NeoForgeGradle3Adapter.logger.info('When the installer opens please set the client installation directory to:')
-            NeoForgeGradle3Adapter.logger.info(installerOutputDir)
-            NeoForgeGradle3Adapter.logger.info('===========================================')
-
+    
+            ForgeGradle3Adapter.logger.debug('Spawning forge installer')
+    
+            ForgeGradle3Adapter.logger.info('============== [ IMPORTANT ] ==============')
+            ForgeGradle3Adapter.logger.info('When the installer opens please set the client installation directory to:')
+            ForgeGradle3Adapter.logger.info(installerOutputDir)
+            ForgeGradle3Adapter.logger.info('===========================================')
+    
             await this.executeInstaller(workingInstaller)
-
-            NeoForgeGradle3Adapter.logger.debug('Installer finished, beginning processing..')
+    
+            ForgeGradle3Adapter.logger.debug('Installer finished, beginning processing..')
         }
 
         await this.verifyInstallerRan(installerOutputDir)
 
-        NeoForgeGradle3Adapter.logger.debug('Processing Version Manifest')
+        ForgeGradle3Adapter.logger.debug('Processing Version Manifest')
         const versionManifestTuple = await this.processVersionManifest(installerOutputDir)
         const versionManifest = versionManifestTuple[0]
 
-        NeoForgeGradle3Adapter.logger.debug('Processing generated neoforge files.')
-        const neoforgeModule = await this.processNeoForgeModule(versionManifest, installerOutputDir)
+        ForgeGradle3Adapter.logger.debug('Processing generated forge files.')
+        const forgeModule = await this.processForgeModule(versionManifest, installerOutputDir)
 
         // Attach version.json module.
-        neoforgeModule.subModules?.unshift(versionManifestTuple[1])
+        forgeModule.subModules?.unshift(versionManifestTuple[1])
 
-        NeoForgeGradle3Adapter.logger.debug('Processing Libraries')
+        ForgeGradle3Adapter.logger.debug('Processing Libraries')
         const libs = await this.processLibraries(versionManifest, installerOutputDir)
 
-        neoforgeModule.subModules = neoforgeModule.subModules?.concat(libs)
+        forgeModule.subModules = forgeModule.subModules?.concat(libs)
 
         if(this.discardOutput) {
-            NeoForgeGradle3Adapter.logger.info(`Removing installer output at ${installerOutputDir}..`)
+            ForgeGradle3Adapter.logger.info(`Removing installer output at ${installerOutputDir}..`)
             await remove(installerOutputDir)
-            NeoForgeGradle3Adapter.logger.info('Removed successfully.')
+            ForgeGradle3Adapter.logger.info('Removed successfully.')
         }
 
-        return neoforgeModule
+        return forgeModule
 
     }
 
     private getVersionManifestPath(installerOutputDir: string): string {
         const versionRepo = this.repoStructure.getVersionRepoStruct()
-        const versionName = versionRepo.getFileName(this.minecraftVersion, this.neoforgeVersion)
+        const versionName = versionRepo.getFileName(this.minecraftVersion, this.forgeVersion)
         return join(installerOutputDir, 'versions', versionName, `${versionName}.json`)
     }
 
@@ -353,7 +404,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
         if(!await pathExists(versionManifestPath)) {
             await remove(installerOutputDir)
-            throw new Error(`NeoForge was either not installed or installed to the wrong location. When the neoforge installer opens, you MUST set the installation directory to ${installerOutputDir}`)
+            throw new Error(`Forge was either not installed or installed to the wrong location. When the forge installer opens, you MUST set the installation directory to ${installerOutputDir}`)
         }
     }
 
@@ -366,18 +417,18 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
         const versionManifestModule: Module = {
             id: this.artifactVersion,
-            name: 'Minecraft NeoForge (version.json)',
+            name: 'Minecraft Forge (version.json)',
             type: Type.VersionManifest,
             artifact: this.generateArtifact(
                 versionManifestBuf,
                 await lstat(versionManifestPath),
-                versionRepo.getVersionManifestURL(this.baseUrl, this.minecraftVersion, this.neoforgeVersion)
+                versionRepo.getVersionManifestURL(this.baseUrl, this.minecraftVersion, this.forgeVersion)
             )
         }
 
         const destination = versionRepo.getVersionManifest(
             this.minecraftVersion,
-            this.neoforgeVersion
+            this.forgeVersion
         )
 
         await copy(versionManifestPath, destination, {overwrite: true})
@@ -385,23 +436,23 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
         return [versionManifest, versionManifestModule]
     }
 
-    private async processNeoForgeModule(versionManifest: VersionManifestFG3, installerOutputDir: string): Promise<Module> {
+    private async processForgeModule(versionManifest: VersionManifestFG3, installerOutputDir: string): Promise<Module> {
 
         const libDir = join(installerOutputDir, 'libraries')
-
+        
         if(this.wildcardsInUse) {
-            if(this.wildcardsInUse.includes(NeoForgeGradle3Adapter.WILDCARD_MCP_VERSION)) {
+            if(this.wildcardsInUse.includes(ForgeGradle3Adapter.WILDCARD_MCP_VERSION)) {
 
                 const mcpVersion = this.getMCPVersion(versionManifest.arguments.game)
                 if(mcpVersion == null) {
-                    throw new Error('MCP Version not found.. did neoforge change their format?')
+                    throw new Error('MCP Version not found.. did forge change their format?')
                 }
 
                 this.generatedFiles = this.generatedFiles!.map(f => {
-                    if(f.version.includes(NeoForgeGradle3Adapter.WILDCARD_MCP_VERSION)) {
+                    if(f.version.includes(ForgeGradle3Adapter.WILDCARD_MCP_VERSION)) {
                         return {
                             ...f,
-                            version: f.version.replace(NeoForgeGradle3Adapter.WILDCARD_MCP_VERSION, mcpVersion)
+                            version: f.version.replace(ForgeGradle3Adapter.WILDCARD_MCP_VERSION, mcpVersion)
                         }
                     }
                     return f
@@ -437,7 +488,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                             entry.version,
                             _classifier
                         ),
-                        name: `Minecraft NeoForge (${entry.name})`,
+                        name: `Minecraft Forge (${entry.name})`,
                         type: Type.Library,
                         classpath: entry.classpath ?? true,
                         artifact: this.generateArtifact(
@@ -476,11 +527,11 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
         }
 
-        const neoforgeModule = mdls.shift()!
-        neoforgeModule.type = Type.NeoForgeHosted
-        neoforgeModule.subModules = mdls
+        const forgeModule = mdls.shift()!
+        forgeModule.type = Type.ForgeHosted
+        forgeModule.subModules = mdls
 
-        return neoforgeModule
+        return forgeModule
     }
 
     private async processLibraries(manifest: VersionManifestFG3, installerOutputDir: string): Promise<Module[]> {
@@ -504,7 +555,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
                 mdls.push({
                     id: entry.name,
-                    name: `Minecraft NeoForge (${components.artifact})`,
+                    name: `Minecraft Forge (${components.artifact})`,
                     type: Type.Library,
                     artifact: this.generateArtifact(
                         await readFile(targetLocalPath),
@@ -538,7 +589,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
     private executeInstaller(installerExec: string): Promise<void> {
         return new Promise(resolve => {
-            const fiLogger = LoggerUtil.getLogger('NeoForge Installer')
+            const fiLogger = LoggerUtil.getLogger('Forge Installer')
             const child = spawn(JavaUtil.getJavaExecutable(), [
                 '-jar',
                 installerExec
@@ -553,7 +604,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 } else {
                     fiLogger.error('Exited with code', code)
                 }
-
+                
                 resolve()
             })
         })
@@ -567,7 +618,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
         }
         return null
     }
-
+    
     private async processWithoutInstaller(installerPath: string): Promise<Module> {
 
         // Extract version.json from installer.
@@ -576,97 +627,98 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
         try {
             versionManifestBuf = await this.getVersionManifestFromJar(installerPath)
         } catch(err) {
-            throw new Error('Failed to find version.json in neoforge installer jar.')
+            throw new Error('Failed to find version.json in forge installer jar.')
         }
-
+        
         const versionManifest = JSON.parse(versionManifestBuf.toString()) as VersionManifestFG3
 
         // Save Version Manifest
         const versionManifestDest = this.repoStructure.getVersionRepoStruct().getVersionManifest(
             this.minecraftVersion,
-            this.neoforgeVersion
+            this.forgeVersion
         )
         await mkdirs(dirname(versionManifestDest))
         await writeJson(versionManifestDest, versionManifest, { spaces: 4 })
 
         const libRepo = this.repoStructure.getLibRepoStruct()
-        const universalLocalPath = libRepo.getLocalNeoForge(this.artifactVersion, 'universal')
-        NeoForgeGradle3Adapter.logger.debug(`Checking for NeoForge Universal jar at ${universalLocalPath}..`)
+        const universalLocalPath = libRepo.getLocalForge(this.artifactVersion, 'universal')
+        ForgeGradle3Adapter.logger.debug(`Checking for Forge Universal jar at ${universalLocalPath}..`)
 
-        const neoforgeMdl = versionManifest.libraries.find(val => val.name.startsWith('net.neoforge.maven:neoforge:'))
+        const forgeMdl = versionManifest.libraries.find(val => val.name.startsWith('net.minecraftforge:forge:'))
 
-        if(neoforgeMdl == null) {
-            throw new Error('NeoForge entry not found in version.json!')
+        if(forgeMdl == null) {
+            throw new Error('Forge entry not found in version.json!')
         }
 
-        let neoforgeUniversalBuffer
+        let forgeUniversalBuffer
 
         // Check for local universal jar.
         if (await libRepo.artifactExists(universalLocalPath)) {
             const localUniBuf = await readFile(universalLocalPath)
             const sha1 = createHash('sha1').update(localUniBuf).digest('hex')
-            if(sha1 !== neoforgeMdl.downloads.artifact.sha1) {
-                NeoForgeGradle3Adapter.logger.debug('SHA-1 of local universal jar does not match version.json entry.')
-                NeoForgeGradle3Adapter.logger.debug('Redownloading NeoForge Universal jar..')
+            if(sha1 !== forgeMdl.downloads.artifact.sha1) {
+                ForgeGradle3Adapter.logger.debug('SHA-1 of local universal jar does not match version.json entry.')
+                ForgeGradle3Adapter.logger.debug('Redownloading Forge Universal jar..')
             } else {
-                NeoForgeGradle3Adapter.logger.debug('Using locally discovered neoforge.')
-                neoforgeUniversalBuffer = localUniBuf
+                ForgeGradle3Adapter.logger.debug('Using locally discovered forge.')
+                forgeUniversalBuffer = localUniBuf
             }
         } else {
-            NeoForgeGradle3Adapter.logger.debug('NeoForge Universal jar not found locally, initializing download..')
+            ForgeGradle3Adapter.logger.debug('Forge Universal jar not found locally, initializing download..')
         }
 
         // Download if local is missing or corrupt
-        if(!neoforgeUniversalBuffer) {
+        if(!forgeUniversalBuffer) {
             await libRepo.downloadArtifactByComponents(
                 this.REMOTE_REPOSITORY,
-                LibRepoStructure.NEOFORGE_GROUP,
-                LibRepoStructure.NEOFORGE_ARTIFACT,
+                LibRepoStructure.FORGE_GROUP,
+                LibRepoStructure.FORGE_ARTIFACT,
                 this.artifactVersion, 'universal', 'jar')
-            neoforgeUniversalBuffer = await readFile(universalLocalPath)
+            forgeUniversalBuffer = await readFile(universalLocalPath)
         }
 
-        NeoForgeGradle3Adapter.logger.debug(`Beginning processing of NeoForge v${this.neoforgeVersion} (Minecraft ${this.minecraftVersion})`)
+        ForgeGradle3Adapter.logger.debug(`Beginning processing of Forge v${this.forgeVersion} (Minecraft ${this.minecraftVersion})`)
 
-        const neoforgeModule: Module = {
+        const forgeModule: Module = {
             id: MavenUtil.mavenComponentsToIdentifier(
-                LibRepoStructure.NEOFORGE_GROUP,
-                LibRepoStructure.NEOFORGE_ARTIFACT,
+                LibRepoStructure.FORGE_GROUP,
+                LibRepoStructure.FORGE_ARTIFACT,
                 this.artifactVersion, 'universal'
             ),
-            name: 'Minecraft NeoForge',
-            type: Type.NeoForgeHosted,
+            name: 'Minecraft Forge',
+            type: Type.ForgeHosted,
             artifact: this.generateArtifact(
-                neoforgeUniversalBuffer,
+                forgeUniversalBuffer,
                 await lstat(universalLocalPath),
                 libRepo.getArtifactUrlByComponents(
                     this.baseUrl,
-                    LibRepoStructure.NEOFORGE_GROUP,
-                    LibRepoStructure.NEOFORGE_ARTIFACT,
+                    LibRepoStructure.FORGE_GROUP,
+                    LibRepoStructure.FORGE_ARTIFACT,
                     this.artifactVersion, 'universal'
                 )
             ),
             subModules: []
         }
-
+        
         // Attach Version Manifest module.
-        neoforgeModule.subModules?.push({
+        forgeModule.subModules?.push({
             id: this.artifactVersion,
-            name: 'Minecraft NeoForge (version.json)',
+            name: 'Minecraft Forge (version.json)',
             type: Type.VersionManifest,
             artifact: this.generateArtifact(
                 await readFile(versionManifestDest),
                 await lstat(versionManifestDest),
                 this.repoStructure.getVersionRepoStruct().getVersionManifestURL(
-                    this.baseUrl, this.minecraftVersion, this.neoforgeVersion)
+                    this.baseUrl, this.minecraftVersion, this.forgeVersion)
             )
         })
 
         for(const lib of versionManifest.libraries) {
-            if (lib.name.startsWith('net.neoforge.maven:neo:')) {
+            if (lib.name.startsWith('net.minecraftforge:forge:')) {
+                // We've already processed forge.
                 continue
             }
-            NeoForgeGradle3Adapter.logger.debug(`Processing ${lib.name}..`)
+            ForgeGradle3Adapter.logger.debug(`Processing ${lib.name}..`)
 
             const extension = 'jar'
             const localPath = libRepo.getArtifactById(lib.name, extension)
@@ -678,11 +730,11 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 libBuf = await readFile(localPath)
                 const sha1 = createHash('sha1').update(libBuf).digest('hex')
                 if (sha1 !== lib.downloads.artifact.sha1) {
-                    NeoForgeGradle3Adapter.logger.debug('Hashes do not match, redownloading..')
+                    ForgeGradle3Adapter.logger.debug('Hashes do not match, redownloading..')
                     queueDownload = true
                 }
             } else {
-                NeoForgeGradle3Adapter.logger.debug('Not found locally, downloading..')
+                ForgeGradle3Adapter.logger.debug('Not found locally, downloading..')
                 queueDownload = true
             }
 
@@ -690,7 +742,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 await libRepo.downloadArtifactDirect(lib.downloads.artifact.url, lib.downloads.artifact.path)
                 libBuf = await readFile(localPath)
             } else {
-                NeoForgeGradle3Adapter.logger.debug('Using local copy.')
+                ForgeGradle3Adapter.logger.debug('Using local copy.')
             }
 
             const stats = await lstat(localPath)
@@ -701,9 +753,9 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
                 mavenComponents.classifier, extension
             )
 
-            neoforgeModule.subModules?.push({
+            forgeModule.subModules?.push({
                 id: properId,
-                name: `Minecraft NeoForge (${mavenComponents?.artifact})`,
+                name: `Minecraft Forge (${mavenComponents?.artifact})`,
                 type: Type.Library,
                 artifact: this.generateArtifact(
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -719,7 +771,7 @@ export class NeoForgeGradle3Adapter extends NeoForgeResolver {
 
         }
 
-        return neoforgeModule
+        return forgeModule
 
     }
 
