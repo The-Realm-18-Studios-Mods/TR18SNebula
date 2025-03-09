@@ -5,12 +5,13 @@ import { MinecraftVersion } from '../../util/MinecraftVersion.js'
 import { VersionUtil } from '../../util/VersionUtil.js'
 import { LoggerUtil } from '../../util/LoggerUtil.js'
 
-export abstract class ForgeResolver extends BaseResolver {
+export abstract class NeoForgeResolver extends BaseResolver {
 
     protected readonly MOJANG_REMOTE_REPOSITORY = 'https://libraries.minecraft.net/'
-    protected readonly REMOTE_REPOSITORY = 'https://files.minecraftforge.net/maven/'
+    protected readonly REMOTE_REPOSITORY = 'https://maven.neoforged.net/releases/net/neoforged/'
 
     protected repoStructure: RepoStructure
+    // @ts-ignore
     protected artifactVersion: string
 
     constructor(
@@ -18,13 +19,12 @@ export abstract class ForgeResolver extends BaseResolver {
         relativeRoot: string,
         baseUrl: string,
         protected minecraftVersion: MinecraftVersion,
-        protected forgeVersion: string,
+        protected neoforgeVersion: string,
         protected discardOutput: boolean,
         protected invalidateCache: boolean
     ) {
         super(absoluteRoot, relativeRoot, baseUrl)
-        this.repoStructure = new RepoStructure(absoluteRoot, relativeRoot, 'forge')
-        this.artifactVersion = this.inferArtifactVersion()
+        this.repoStructure = new RepoStructure(absoluteRoot, relativeRoot, 'neoforge')
         this.checkSecurity()
     }
 
@@ -39,13 +39,8 @@ export abstract class ForgeResolver extends BaseResolver {
         // https://gist.github.com/TheCurle/f15a6b63ceee3be58bff5e7a97c3a4e6
 
         const patchMatrix: { [major: number]: string } = {
-            18: '38.0.17',
-            17: '37.1.1',
-            16: '36.2.20',
-            15: '31.2.56',
-            14: '28.2.25',
-            13: '25.0.222',
-            12: '14.23.5.2857'
+            21: '21.1.123',
+            20: '47.1.106'
         }
 
         const isVulnerable = major == 1 && (minor <= 18 && minor >= 12)
@@ -54,7 +49,7 @@ export abstract class ForgeResolver extends BaseResolver {
 
         if(isVulnerable) {
             if(hasPatch) {
-                unsafe = !VersionUtil.versionGte(this.forgeVersion, patchMatrix[minor])
+                unsafe = !VersionUtil.versionGte(this.neoforgeVersion, patchMatrix[minor])
             } else {
                 unsafe = true
             }
@@ -62,14 +57,14 @@ export abstract class ForgeResolver extends BaseResolver {
 
         if(unsafe) {
 
-            const logger = LoggerUtil.getLogger('ForgeSecurity')
+            const logger = LoggerUtil.getLogger('NeoForgeSecurity')
 
             logger.error('==================================================================')
             logger.error('                           WARNING                                ')
-            logger.error('  This version of Forge is vulnerable to a CRITICAL RCE exploit.  ')
+            logger.error(' This version of NeoForge is vulnerable to a CRITICAL RCE exploit. ')
             logger.error('                    DO NOT USE THIS VERSION!                      ')
             if(hasPatch) {
-                logger.error(`     A patch is available as of Minecraft Forge v${patchMatrix[minor]}       `)
+                logger.error(`   A patch is available as of Minecraft NeoForge v${patchMatrix[minor]}      `)
             }
             else {
                 logger.error('         There is no patch available for this version.            ')
@@ -87,49 +82,6 @@ export abstract class ForgeResolver extends BaseResolver {
 
     }
 
-    // Coverage is not 100% but that doesnt matter.
-    // It's enough and you should always use the latest version anyway.
-    public inferArtifactVersion(): string {
-        const version = `${this.minecraftVersion}-${this.forgeVersion}`
-
-        const ver = this.forgeVersion.split('.')
-        const major = Number(ver[0])
-        if ([12, 11, 10].includes(major)) {
-            const minor = Number(ver[1])
-            const revision = Number(ver[2])
-            const extra = Number(ver[3])
-
-            if (major === 10) {
-                if (minor === 13 && revision >= 2 && extra >= 1300) {
-                    return `${version}-1.7.10`
-                }
-            }
-            else if (major === 11) {
-                if (minor === 15) {
-                    if (revision === 1 && extra >= 1890) {
-                        return `${version}-1.8.9`
-                    } else if (revision === 0 && extra <= 1654) {
-                        return `${version}-1.8.8`
-                    }
-                } else if (minor === 14 && revision === 0 && extra <= 1295) {
-                    return `${version}-1.8`
-                }
-            } else if (major === 12) {
-                if (minor === 17 && revision === 0 && extra <= 1936) {
-                    return `${version}-1.9.4`
-                } else if (minor === 16) {
-                    if (revision === 0 && extra <= 1885) {
-                        return `${version}-1.9`
-                    } else if (revision === 1 && extra === 1938) {
-                        return `${version}-1.9.0`
-                    }
-                }
-            }
-
-        }
-        return version
-    }
-
     protected async getVersionManifestFromJar(jarPath: string): Promise<Buffer>{
         return new Promise((resolve, reject) => {
             const zip = new StreamZip({
@@ -144,7 +96,7 @@ export abstract class ForgeResolver extends BaseResolver {
                 } catch(err) {
                     reject(err)
                 }
-                
+
             })
             zip.on('error', err => reject(err))
         })
