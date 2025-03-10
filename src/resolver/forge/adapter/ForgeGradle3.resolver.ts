@@ -59,7 +59,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
     private configure(): void {
 
         if(ForgeGradle3Adapter.isExecutableJar(this.minecraftVersion)) {
-            
+
             // Separate block for 1.20.4+
 
             this.generatedFiles = [
@@ -308,8 +308,8 @@ export class ForgeGradle3Adapter extends ForgeResolver {
             ForgeGradle3Adapter.logger.debug('Forge installer not found locally, initializing download..')
             await libRepo.downloadArtifactByComponents(
                 this.REMOTE_REPOSITORY,
-                LibRepoStructure.FORGE_GROUP,
-                LibRepoStructure.FORGE_ARTIFACT,
+                LibRepoStructure.NEOFORGE_GROUP,
+                LibRepoStructure.NEOFORGE_ARTIFACT,
                 this.artifactVersion, 'installer', 'jar'
             )
         } else {
@@ -350,19 +350,19 @@ export class ForgeGradle3Adapter extends ForgeResolver {
             const workingInstaller = join(installerOutputDir, basename(installerPath))
 
             await copy(installerPath, workingInstaller)
-    
+
             // Required for the installer to function.
             await writeFile(join(installerOutputDir, 'launcher_profiles.json'), JSON.stringify({}))
-    
+
             ForgeGradle3Adapter.logger.debug('Spawning forge installer')
-    
+
             ForgeGradle3Adapter.logger.info('============== [ IMPORTANT ] ==============')
             ForgeGradle3Adapter.logger.info('When the installer opens please set the client installation directory to:')
             ForgeGradle3Adapter.logger.info(installerOutputDir)
             ForgeGradle3Adapter.logger.info('===========================================')
-    
+
             await this.executeInstaller(workingInstaller)
-    
+
             ForgeGradle3Adapter.logger.debug('Installer finished, beginning processing..')
         }
 
@@ -439,7 +439,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
     private async processForgeModule(versionManifest: VersionManifestFG3, installerOutputDir: string): Promise<Module> {
 
         const libDir = join(installerOutputDir, 'libraries')
-        
+
         if(this.wildcardsInUse) {
             if(this.wildcardsInUse.includes(ForgeGradle3Adapter.WILDCARD_MCP_VERSION)) {
 
@@ -604,7 +604,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
                 } else {
                     fiLogger.error('Exited with code', code)
                 }
-                
+
                 resolve()
             })
         })
@@ -618,7 +618,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
         }
         return null
     }
-    
+
     private async processWithoutInstaller(installerPath: string): Promise<Module> {
 
         // Extract version.json from installer.
@@ -629,7 +629,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
         } catch(err) {
             throw new Error('Failed to find version.json in forge installer jar.')
         }
-        
+
         const versionManifest = JSON.parse(versionManifestBuf.toString()) as VersionManifestFG3
 
         // Save Version Manifest
@@ -644,7 +644,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
         const universalLocalPath = libRepo.getLocalForge(this.artifactVersion, 'universal')
         ForgeGradle3Adapter.logger.debug(`Checking for Forge Universal jar at ${universalLocalPath}..`)
 
-        const forgeMdl = versionManifest.libraries.find(val => val.name.startsWith('net.minecraftforge:forge:'))
+        const forgeMdl = versionManifest.libraries.find(val => val.name.startsWith('net.neoforged:neoforged:'))
 
         if(forgeMdl == null) {
             throw new Error('Forge entry not found in version.json!')
@@ -671,8 +671,8 @@ export class ForgeGradle3Adapter extends ForgeResolver {
         if(!forgeUniversalBuffer) {
             await libRepo.downloadArtifactByComponents(
                 this.REMOTE_REPOSITORY,
-                LibRepoStructure.FORGE_GROUP,
-                LibRepoStructure.FORGE_ARTIFACT,
+                LibRepoStructure.NEOFORGE_GROUP,
+                LibRepoStructure.NEOFORGE_ARTIFACT,
                 this.artifactVersion, 'universal', 'jar')
             forgeUniversalBuffer = await readFile(universalLocalPath)
         }
@@ -699,7 +699,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
             ),
             subModules: []
         }
-        
+
         // Attach Version Manifest module.
         forgeModule.subModules?.push({
             id: this.artifactVersion,
@@ -714,7 +714,7 @@ export class ForgeGradle3Adapter extends ForgeResolver {
         })
 
         for(const lib of versionManifest.libraries) {
-            if (lib.name.startsWith('net.minecraftforge:forge:')) {
+            if (lib.name.startsWith('net.neoforged:neoforged:')) {
                 // We've already processed forge.
                 continue
             }
