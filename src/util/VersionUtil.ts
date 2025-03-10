@@ -97,7 +97,7 @@ export class VersionUtil {
     public static async getPromotionNeoForgeIndex(): Promise<PromotionsSlim> {
         const response = await got.get<PromotionsSlim>({
             method: 'get',
-            url: 'https://maven.neoforge.net/net/neoforge/neo/promotions_slim.json',
+            url: 'https://maven.neoforge.net/releases/net/neoforged/neoforge/promotions_slim.json',
             responseType: 'json'
         })
         return response.body
